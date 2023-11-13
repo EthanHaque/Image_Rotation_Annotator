@@ -1,0 +1,11 @@
+#imageGallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#imageGallery img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+}
