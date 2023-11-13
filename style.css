@@ -1,26 +1,15 @@
-#imageGallery {
-    display: flex;
-    flex-wrap: wrap;
+#carouselContainer {
     gap: 10px;
-}
-
-#imageGallery img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    cursor: pointer;
-}
-
-#selectedImageContainer {
-    margin-bottom: 20px;
+    /* Maintain some spacing if needed */
 }
 
 #selectedImage {
     max-width: 80%;
     max-height: 500px;
+    margin: 0 10px;
 }
 
 #rotationSlider {
-    display: block;
-    width: 300px;
+    width: 100%;
+    /* Full-width slider */
 }
