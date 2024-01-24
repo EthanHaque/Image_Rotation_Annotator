@@ -115,7 +115,7 @@ class ImageRotatorApp:
         for i in range(start_index, min(end_index, len(self.image_files))):
             try:
                 with Image.open(self.image_files[i]) as img:
-                    self.images.append(img.copy())
+                    self.images[i] = img.copy()
             except OSError:
                 print(f"Failed to load image: {self.image_files[i]}")
 
