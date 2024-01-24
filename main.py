@@ -107,10 +107,16 @@ class ImageRotatorApp:
         self.original_image = self.images[self.current_image_index]
         self.on_canvas_resized(None)
 
-    def load_next_group(self, start_index):
-        # Determine the start and end indices for the next group of images
-        start_index = len(self.images)
-        end_index = start_index + self.group_size
+        # load surrounding images if they haven't been loaded yet
+        window = self.images[
+            self.current_image_index - self.group_size//2 : self.current_image_index + self.group_size//2
+        ]
+        if None in window:
+            none_indices = [i for i, x in enumerate(window) if x is None]
+            none_indices = [
+                i + self.current_image_index - self.group_size//2 for i in none_indices
+            ]
+            self.executor.submit(self.load_images, none_indices)
 
         # Load the next group of images
         for i in range(start_index, min(end_index, len(self.image_files))):
