@@ -68,10 +68,11 @@ class ImageRotatorApp:
 
     def load_images(self):
         directory_path = filedialog.askdirectory()
-        self.images = []
+        self.images = [] 
         if directory_path:
             # Get a list of all files in the directory
             files = os.listdir(directory_path)
+            files = sorted(files, key=lambda x: x.lower())
 
             # Filter the list to include only image files
             self.image_files = [
