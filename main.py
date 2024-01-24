@@ -129,9 +129,6 @@ class ImageRotatorApp:
             except OSError:
                 print(f"Failed to load image: {self.image_files[i]}")
 
-        # Update the index at which the last group started
-        self.last_group_start_index = start_index
-
         # Reset the rotation angle and load the first image of the new group
         # if start_index == 0:
         #     self.rotation_angle = 0
