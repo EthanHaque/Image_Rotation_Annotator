@@ -102,7 +102,8 @@ class ImageRotatorApp:
         self.current_image_index = int(value)
         if self.images[self.current_image_index] is None:
             # If the image hasn't been loaded yet, load it
-            self.executor.submit(self.load_image_at_index, self.current_image_index)
+            # self.executor.submit(self.load_image_at_index, self.current_image_index)
+            self.load_image_at_index(self.current_image_index)
         self.original_image = self.images[self.current_image_index]
         self.on_canvas_resized(None)
 
