@@ -52,7 +52,7 @@ class ImageRotatorApp:
         self.images = []
         self.image_files = []
         self.current_image_index = 0
-        self.group_size = 30
+        self.group_size = 20
         self.original_image = None
         self.tk_image = None
         self.rotation_angle = 0
