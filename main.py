@@ -88,7 +88,13 @@ class ImageRotatorApp:
             self.images = [None] * len(self.image_files)
 
             # Start a new thread to load the images in the background
-            self.executor.submit(self.load_next_group)
+
+    def load_image_at_index(self, index):
+        try:
+            with Image.open(self.image_files[index]) as img:
+                self.images[index] = img.copy()
+        except OSError:
+            print(f"Failed to load image: {self.image_files[index]}")
 
     def on_slider_changed(self, value):
         # Change the current image when the slider value changes
