@@ -165,6 +165,11 @@ class ImageRotatorApp:
 
         self.slider.set(self.current_image_index)
 
+        window = self.images[self.current_image_index - self.group_size: self.current_image_index - self.group_size//2]
+        if None in window:
+            none_index = window.index(None) + self.current_image_index - self.group_size
+            self.executor.submit(self.load_next_group, none_index)
+
     def on_canvas_resized(self, event):
         if self.original_image:
             canvas_width = self.canvas.winfo_width()
