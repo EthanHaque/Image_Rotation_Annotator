@@ -118,8 +118,11 @@ class ImageRotatorApp:
             ]
             self.executor.submit(self.load_images, none_indices)
 
-        # Load the next group of images
-        for i in range(start_index, min(end_index, len(self.image_files))):
+    def load_images(self, indices):
+        # Load images at the given indices
+        for i in indices:
+            if i < 0 or i >= len(self.image_files):
+                continue
             try:
                 with Image.open(self.image_files[i]) as img:
                     self.images[i] = img.copy()
