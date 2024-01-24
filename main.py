@@ -20,7 +20,10 @@ class ImageRotatorApp:
     def setup_menu(self, root):
         menu_bar = tk.Menu(root)
         file_menu = tk.Menu(menu_bar, tearoff=0)
-        file_menu.add_command(label="Open Directory", command=lambda: self.executor.submit(self.load_images))
+        file_menu.add_command(
+            label="Open Directory",
+            command=lambda: self.executor.submit(self.load_images),
+        )
         menu_bar.add_cascade(label="File", menu=file_menu)
         root.config(menu=menu_bar)
 
@@ -65,6 +68,7 @@ class ImageRotatorApp:
 
     def load_images(self):
         directory_path = filedialog.askdirectory()
+        self.images = []
         if directory_path:
             # Get a list of all files in the directory
             files = os.listdir(directory_path)
@@ -78,6 +82,7 @@ class ImageRotatorApp:
 
             # Update the slider to reflect the number of images
             self.slider.config(to=len(self.image_files) - 1)
+            self.slider.set(0)
 
             # Start a new thread to load the images in the background
             self.executor.submit(self.load_next_group)
