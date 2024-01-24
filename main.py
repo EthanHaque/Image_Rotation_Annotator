@@ -95,9 +95,11 @@ class ImageRotatorApp:
 
         # Load the next group of images
         for i in range(start_index, min(end_index, len(self.image_files))):
-            image_file = self.image_files[i]
-            image = Image.open(image_file)
-            self.images.append(image)
+            try:
+                with Image.open(self.image_files[i]) as img:
+                    self.images.append(img.copy())
+            except OSError:
+                print(f"Failed to load image: {self.image_files[i]}")
 
         # Update the index at which the last group started
         self.last_group_start_index = start_index
