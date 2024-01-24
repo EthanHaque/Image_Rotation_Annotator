@@ -155,6 +155,11 @@ class ImageRotatorApp:
         # Move to the previous image in the list
         if self.current_image_index > 0:
             self.current_image_index -= 1
+
+        if self.images[self.current_image_index] is None:
+            # If the image hasn't been loaded yet, load it
+            self.executor.submit(self.load_image_at_index, self.current_image_index)
+
         self.original_image = self.images[self.current_image_index]
         self.on_canvas_resized(None)
 
