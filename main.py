@@ -133,10 +133,10 @@ class ImageRotatorApp:
         self.last_group_start_index = start_index
 
         # Reset the rotation angle and load the first image of the new group
-        if start_index == 0:
-            self.rotation_angle = 0
-            self.original_image = self.images[0]
-            self.on_canvas_resized(None)
+        # if start_index == 0:
+        #     self.rotation_angle = 0
+        #     self.original_image = self.images[0]
+        #     self.on_canvas_resized(None)
 
     def next_image(self, event=None):
         # Return immediately if no images are loaded
