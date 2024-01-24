@@ -22,7 +22,7 @@ class ImageRotatorApp:
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(
             label="Open Directory",
-            command=lambda: self.executor.submit(self.load_images),
+            command=lambda: self.executor.submit(self.open_directory),
         )
         menu_bar.add_cascade(label="File", menu=file_menu)
         root.config(menu=menu_bar)
@@ -66,9 +66,9 @@ class ImageRotatorApp:
             self.rotation_angle = 0  # Reset the rotation angle
             self.on_canvas_resized(None)  # Resize the image to fit the canvas
 
-    def load_images(self):
+    def open_directory(self):
         directory_path = filedialog.askdirectory()
-        self.images = [] 
+        self.images = []
         if directory_path:
             # Get a list of all files in the directory
             files = os.listdir(directory_path)
