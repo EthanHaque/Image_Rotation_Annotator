@@ -85,6 +85,8 @@ class ImageRotatorApp:
             self.slider.config(to=len(self.image_files) - 1)
             self.slider.set(0)
 
+            self.images = [None] * len(self.image_files)
+
             # Start a new thread to load the images in the background
             self.executor.submit(self.load_next_group)
 
