@@ -179,10 +179,16 @@ class ImageRotatorApp:
 
         self.slider.set(self.current_image_index)
 
-        window = self.images[self.current_image_index - self.group_size: self.current_image_index - self.group_size//2]
-        if None in window:
-            none_index = window.index(None) + self.current_image_index - self.group_size
-            self.executor.submit(self.load_next_group, none_index)
+        window = self.images[
+            self.current_image_index - self.group_size : self.current_image_index - 1
+        ]
+        if None in window[: len(window) // 2]:
+            none_indices = [i for i, x in enumerate(window) if x is None]
+            none_indices = [
+                i + self.current_image_index - self.group_size for i in none_indices
+            ]
+            none_indices.reverse()  # Load images closest to the current image first
+            self.executor.submit(self.load_images, none_indices)
 
     def on_canvas_resized(self, event):
         if self.original_image:
