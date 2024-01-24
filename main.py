@@ -88,6 +88,7 @@ class ImageRotatorApp:
             self.images = [None] * len(self.image_files)
 
             # Start a new thread to load the images in the background
+            self.executor.submit(self.load_next_group, 0)
 
     def load_image_at_index(self, index):
         try:
