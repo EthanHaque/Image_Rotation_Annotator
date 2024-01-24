@@ -141,12 +141,11 @@ class ImageRotatorApp:
 
         self.slider.set(self.current_image_index)
 
-        # If we're more than halfway through the last loaded group, start loading the next group
-        if (
-            self.current_image_index
-            > self.last_group_start_index + self.group_size // 2
-        ):
-            self.executor.submit(self.load_next_group)
+        # Load the next group of images if there are less than half a group left to load
+        window = self.images[self.current_image_index + 1 + self.group_size//2 :self.current_image_index + self.group_size]
+        if None in window:
+            none_index = window.index(None) + self.current_image_index + 1 + self.group_size//2
+            self.executor.submit(self.load_next_group, none_index)
 
     def previous_image(self, event=None):
         # Return immediately if no images are loaded
