@@ -3,6 +3,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import os
 from concurrent.futures import ThreadPoolExecutor
+import csv
 
 
 class ImageRotatorApp:
@@ -19,12 +20,23 @@ class ImageRotatorApp:
 
     def setup_menu(self, root):
         menu_bar = tk.Menu(root)
+
+        # File menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(
             label="Open Directory",
             command=lambda: self.executor.submit(self.open_directory),
         )
         menu_bar.add_cascade(label="File", menu=file_menu)
+
+        # Export menu
+        export_menu = tk.Menu(menu_bar, tearoff=0)
+        export_menu.add_command(
+            label="Export Annotations",
+            command=self.export_annotations_dialog,
+        )
+        menu_bar.add_cascade(label="Export", menu=export_menu)
+
         root.config(menu=menu_bar)
 
     def setup_controls(self, root):
@@ -52,19 +64,31 @@ class ImageRotatorApp:
         self.images = []
         self.image_files = []
         self.current_image_index = 0
-        self.group_size = 20
-        self.original_image = None
-        self.tk_image = None
+        self.group_size = 30
+        self.current_image = None
         self.rotation_angle = 0
+        self.rotation_angles = []
         self.start_x = self.start_y = None
         self.loading_thread = None
 
-    def load_image(self):
-        file_path = filedialog.askopenfilename()
-        if file_path:
-            self.original_image = Image.open(file_path)
-            self.rotation_angle = 0  # Reset the rotation angle
-            self.on_canvas_resized(None)  # Resize the image to fit the canvas
+    def export_annotations_dialog(self):
+        filename = filedialog.asksaveasfilename(defaultextension=".csv")
+        if filename:
+            self.export_annotations(filename)
+
+    def export_annotations(self, filename):
+        with open(filename, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Image", "Rotation Angle"])
+            image_files_subset = self.image_files[: self.current_image_index + 1]
+            rotation_angles_subset = self.rotation_angles[
+                : self.current_image_index + 1
+            ]
+            for image_file, rotation_angle in zip(
+                image_files_subset, rotation_angles_subset
+            ):
+                image_name = os.path.basename(image_file)
+                writer.writerow([image_name, rotation_angle])
 
     def open_directory(self):
         directory_path = filedialog.askdirectory()
@@ -86,9 +110,10 @@ class ImageRotatorApp:
             self.slider.set(0)
 
             self.images = [None] * len(self.image_files)
+            self.rotation_angles = [0] * len(self.image_files)
 
             # Start a new thread to load the images in the background
-            self.executor.submit(self.load_next_group, 0)
+            self.executor.submit(self.load_images, range(self.group_size))
 
     def load_image_at_index(self, index):
         try:
@@ -104,17 +129,22 @@ class ImageRotatorApp:
             # If the image hasn't been loaded yet, load it
             # self.executor.submit(self.load_image_at_index, self.current_image_index)
             self.load_image_at_index(self.current_image_index)
-        self.original_image = self.images[self.current_image_index]
+
+        self.current_image = self.images[self.current_image_index]
+        self.rotation_angle = self.rotation_angles[self.current_image_index]
         self.on_canvas_resized(None)
 
         # load surrounding images if they haven't been loaded yet
         window = self.images[
-            self.current_image_index - self.group_size//2 : self.current_image_index + self.group_size//2
+            self.current_image_index
+            - self.group_size // 2 : self.current_image_index
+            + self.group_size // 2
         ]
         if None in window:
             none_indices = [i for i, x in enumerate(window) if x is None]
             none_indices = [
-                i + self.current_image_index - self.group_size//2 for i in none_indices
+                i + self.current_image_index - self.group_size // 2
+                for i in none_indices
             ]
             self.executor.submit(self.load_images, none_indices)
 
@@ -129,11 +159,10 @@ class ImageRotatorApp:
             except OSError:
                 print(f"Failed to load image: {self.image_files[i]}")
 
-        # Reset the rotation angle and load the first image of the new group
-        # if start_index == 0:
-        #     self.rotation_angle = 0
-        #     self.original_image = self.images[0]
-        #     self.on_canvas_resized(None)
+        if self.current_image_index == 0:
+            self.rotation_angle = self.rotation_angles[0]
+            self.current_image = self.images[0]
+            self.on_canvas_resized(None)
 
     def next_image(self, event=None):
         # Return immediately if no images are loaded
@@ -143,7 +172,7 @@ class ImageRotatorApp:
         # Move to the next image in the list
         if self.current_image_index < len(self.images) - 1:
             self.current_image_index += 1
-        self.original_image = self.images[self.current_image_index]
+        self.current_image = self.images[self.current_image_index]
         self.on_canvas_resized(None)
 
         self.slider.set(self.current_image_index)
@@ -171,7 +200,7 @@ class ImageRotatorApp:
             # self.executor.submit(self.load_image_at_index, self.current_image_index)
             self.load_image_at_index(self.current_image_index)
 
-        self.original_image = self.images[self.current_image_index]
+        self.current_image = self.images[self.current_image_index]
         self.on_canvas_resized(None)
 
         self.slider.set(self.current_image_index)
@@ -188,22 +217,24 @@ class ImageRotatorApp:
             self.executor.submit(self.load_images, none_indices)
 
     def on_canvas_resized(self, event):
-        if self.original_image:
+        if self.current_image:
             canvas_width = self.canvas.winfo_width()
             canvas_height = self.canvas.winfo_height()
-            image_aspect = self.original_image.width / self.original_image.height
+            image_aspect = self.current_image.width / self.current_image.height
             canvas_aspect = canvas_width / canvas_height
 
             if image_aspect > canvas_aspect:
                 # If image is wider than canvas (relative to their heights), set width to canvas width and scale height
-                width = min(canvas_width, self.original_image.width)
+                width = min(canvas_width, self.current_image.width)
                 height = int(width / image_aspect)
             else:
                 # If image is taller than canvas (relative to their widths), set height to canvas height and scale width
-                height = min(canvas_height, self.original_image.height)
+                height = min(canvas_height, self.current_image.height)
                 width = int(height * image_aspect)
 
-            self.image = self.original_image.resize((width, height), Image.LANCZOS)
+            self.current_image = self.current_image.resize(
+                (width, height), resample=Image.BILINEAR
+            )
             self.update_canvas()
 
     def start_rotation(self, event):
@@ -215,6 +246,7 @@ class ImageRotatorApp:
         rotation_sensitivity = 0.2
         self.rotation_angle -= (dx + dy) * rotation_sensitivity
         self.rotation_angle %= 360
+        self.rotation_angles[self.current_image_index] = self.rotation_angle
         self.update_canvas()
         self.start_x, self.start_y = event.x, event.y
 
@@ -224,21 +256,26 @@ class ImageRotatorApp:
     def rotate_90_degrees(self, _):
         self.rotation_angle += 90
         self.rotation_angle %= 360
+        self.rotation_angles[self.current_image_index] = self.rotation_angle
         self.update_canvas()
 
     def rotate_180_degrees(self, _):
         self.rotation_angle += 180
         self.rotation_angle %= 360
+        self.rotation_angles[self.current_image_index] = self.rotation_angle
         self.update_canvas()
 
     def reset_rotation(self, _):
         self.rotation_angle = 0
+        self.rotation_angles[self.current_image_index] = 0
         self.update_canvas()
 
     def update_canvas(self):
-        self.canvas.delete("all")
-        rotated_image = self.image.rotate(self.rotation_angle, resample=Image.BILINEAR)
+        rotated_image = self.current_image.rotate(
+            self.rotation_angle, resample=Image.BILINEAR
+        )
         self.tk_image = ImageTk.PhotoImage(rotated_image)
+        self.canvas.delete("all")
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
         self.canvas.create_image(
@@ -250,8 +287,8 @@ class ImageRotatorApp:
         grid_size = 25
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
-        image_width = self.image.width
-        image_height = self.image.height
+        image_width = self.current_image.width
+        image_height = self.current_image.height
 
         # Calculate the center of the canvas
         center_x = canvas_width // 2
