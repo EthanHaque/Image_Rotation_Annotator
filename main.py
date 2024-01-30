@@ -95,15 +95,22 @@ class ImageRotatorApp:
         self.images = []
         if directory_path:
             # Get a list of all files in the directory
-            files = os.listdir(directory_path)
-            files = sorted(files, key=lambda x: x.lower())
+            # files = os.listdir(directory_path)
+            # files = sorted(files, key=lambda x: x.lower())
+
+            for root, dirs, files in os.walk(directory_path):
+                for file in files:
+                    if file.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp")):
+                        self.image_files.append(os.path.join(root, file))
+
+            self.image_files = sorted(self.image_files, key=lambda x: x.lower())
 
             # Filter the list to include only image files
-            self.image_files = [
-                os.path.join(directory_path, f)
-                for f in files
-                if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp"))
-            ]
+            # self.image_files = [
+            #     os.path.join(directory_path, f)
+            #     for f in files
+            #     if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp"))
+            # ]
 
             # Update the slider to reflect the number of images
             self.slider.config(to=len(self.image_files) - 1)
