@@ -87,8 +87,7 @@ class ImageRotatorApp:
             for image_file, rotation_angle in zip(
                 image_files_subset, rotation_angles_subset
             ):
-                image_name = os.path.basename(image_file)
-                writer.writerow([image_name, rotation_angle])
+                writer.writerow([image_file, rotation_angle])
 
     def open_directory(self):
         directory_path = filedialog.askdirectory()
