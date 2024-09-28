@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
-from PIL import Image, ImageTk
+from PIL import Image
 import os
 from concurrent.futures import ThreadPoolExecutor
 import csv
@@ -122,6 +122,8 @@ class ImageRotatorApp:
             self.executor.submit(self.load_images, range(self.group_size))
 
     def load_image_at_index(self, index):
+        if index < 0 or index >= len(self.image_files):
+            return None
         try:
             with Image.open(self.image_files[index]) as img:
                 self.images[index] = img.copy()
@@ -129,41 +131,29 @@ class ImageRotatorApp:
             print(f"Failed to load image: {self.image_files[index]}")
 
     def on_slider_changed(self, value):
-        # Change the current image when the slider value changes
         self.current_image_index = int(value)
         if self.images[self.current_image_index] is None:
-            # If the image hasn't been loaded yet, load it
-            # self.executor.submit(self.load_image_at_index, self.current_image_index)
             self.load_image_at_index(self.current_image_index)
 
         self.current_image = self.images[self.current_image_index]
         self.rotation_angle = self.rotation_angles[self.current_image_index]
         self.on_canvas_resized(None)
 
-        # load surrounding images if they haven't been loaded yet
-        window = self.images[
-            self.current_image_index
-            - self.group_size // 2 : self.current_image_index
-            + self.group_size // 2
-        ]
-        if None in window:
-            none_indices = [i for i, x in enumerate(window) if x is None]
-            none_indices = [
-                i + self.current_image_index - self.group_size // 2
-                for i in none_indices
-            ]
-            self.executor.submit(self.load_images, none_indices)
+        # Preload nearby images and clear unused ones
+        window = range(
+            max(0, self.current_image_index - self.group_size // 2),
+            min(len(self.image_files), self.current_image_index + self.group_size // 2),
+        )
+        self.executor.submit(self.load_images, window)
+        self.clear_unused_images()
 
     def load_images(self, indices):
         # Load images at the given indices
         for i in indices:
             if i < 0 or i >= len(self.image_files):
                 continue
-            try:
-                with Image.open(self.image_files[i]) as img:
-                    self.images[i] = img.copy()
-            except OSError:
-                print(f"Failed to load image: {self.image_files[i]}")
+            if self.images[i] is None:
+                self.load_image_at_index(i)
 
         if self.current_image_index == 0:
             self.rotation_angle = self.rotation_angles[0]
@@ -280,7 +270,12 @@ class ImageRotatorApp:
         rotated_image = self.current_image.rotate(
             self.rotation_angle, resample=Image.BILINEAR
         )
-        self.tk_image = ImageTk.PhotoImage(rotated_image)
+
+        self.rotated_image = rotated_image.convert("RGB")
+        self.tk_image = tk.PhotoImage(
+            data=self.convert_image_to_png_data(rotated_image)
+        )
+
         self.canvas.delete("all")
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
@@ -288,6 +283,22 @@ class ImageRotatorApp:
             canvas_width // 2, canvas_height // 2, image=self.tk_image
         )
         self.draw_grid_on_canvas()
+
+    def convert_image_to_png_data(self, image):
+        from io import BytesIO
+
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        return buffer.getvalue()
+
+    def clear_unused_images(self):
+        min_index = max(0, self.current_image_index - self.group_size)
+        max_index = min(
+            len(self.image_files), self.current_image_index + self.group_size
+        )
+        for i in range(len(self.images)):
+            if i < min_index or i > max_index:
+                self.images[i] = None  # Clear from memory
 
     def draw_grid_on_canvas(self):
         grid_size = 25
@@ -321,6 +332,6 @@ class ImageRotatorApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("800x600")
+    root.geometry("1200x900")
     app = ImageRotatorApp(root)
     root.mainloop()
